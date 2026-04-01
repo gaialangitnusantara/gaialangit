@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- Top-level Farming menu (defined in agri_base_masterdata, shared by all agri addons) -->
+    <menuitem id="menu_farming_root"
+              name="Farming"
+              sequence="100"
+              groups="agri_base_masterdata.group_farm_operator,agri_base_masterdata.group_finance_user,agri_base_masterdata.group_farm_admin"/>
+
+    <!-- Configuration section (admin only) -->
+    <menuitem id="menu_farming_config"
+              name="Configuration"
+              parent="menu_farming_root"
+              sequence="90"
+              groups="agri_base_masterdata.group_farm_admin"/>
+
+    <menuitem id="menu_agri_division"
+              name="Divisions"
+              parent="menu_farming_config"
+              action="action_agri_division"
+              sequence="10"
+              groups="agri_base_masterdata.group_farm_admin"/>
+
+    <menuitem id="menu_agri_site"
+              name="Sites"
+              parent="menu_farming_config"
+              action="action_agri_site"
+              sequence="20"
+              groups="agri_base_masterdata.group_farm_admin"/>
+
+    <menuitem id="menu_agri_zone"
+              name="Zones"
+              parent="menu_farming_config"
+              action="action_agri_zone"
+              sequence="30"
+              groups="agri_base_masterdata.group_farm_admin"/>
+
+</odoo>

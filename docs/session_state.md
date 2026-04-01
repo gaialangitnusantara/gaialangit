@@ -10,7 +10,24 @@ Python target: 3.12
 ---
 
 ## Current phase
-**Phase 1 — Standard Odoo Foundation + Security Design** ✅ COMPLETE (2026-04-01)
+**Phase 2 — Custom Addon Foundation** ✅ COMPLETE (2026-04-01)
+
+### Phase 2 results
+- `agri_base_masterdata` installed and verified (75 modules, no errors/warnings)
+  - Division / Site / Zone models with hierarchy and constraints
+  - 4 security groups using Odoo 19 `res.groups.privilege` pattern
+  - Full ACL matrix (12 rows) per security_design.md
+  - `res.users` extended with `site_id` (M2o) and `zone_ids` (M2m)
+  - Farm Access tab on user form (admin-only)
+  - Farming top-level menu + Configuration sub-menu
+- `agri_biological_batches` installed and verified (75 modules, no errors/warnings)
+  - `agri.biological.batch` with `mail.thread` + `mail.activity.mixin`
+  - State machine: draft → active → harvesting → closed / cancelled
+  - Anti-drift fields: `last_gate_sync`, `odoo_stock_state`
+  - Record rules: operator=zone-scoped, shed_manager=site-scoped, admin=bypass
+  - Gate method authorization check (`_check_gate_access`)
+- Odoo 19 discovery: `category_id` removed from `res.groups` — must use `res.groups.privilege`
+- Sequence `agri.biological.batch` must be created in data before `create()` works (next step)
 
 ### Phase 1 results
 - `docs/baseline_config.md` — company, warehouse, CoA, journals, taxes, 10 products, 6 categories, UoMs, location design
@@ -78,8 +95,8 @@ Four groups defined before any addon scaffolding:
 
 | Addon | Purpose | Status |
 |-------|---------|--------|
-| `agri_base_masterdata` | Division/Site/Zone hierarchy, security groups | Not started |
-| `agri_biological_batches` | Generic biological batch base class | Not started |
+| `agri_base_masterdata` | Division/Site/Zone hierarchy, security groups | ✅ Installed |
+| `agri_biological_batches` | Generic biological batch base class | ✅ Installed |
 | `agri_duck_ops` | Flock lifecycle, all gate postings, cost summary | Not started |
 
 All other addons from the full PRD are deferred until Slice 1 is validated.
@@ -137,20 +154,22 @@ Account codes will be assigned after `l10n_id` chart is installed and reviewed.
 ---
 
 ## Next safest step
-**Phase 2: Scaffold and install `agri_base_masterdata`**
-All pre-conditions met — security design locked, no open questions.
+**Phase 3: Scaffold `agri_duck_ops`**
+Pre-conditions met — base addons installed and verified.
 
-1. Scaffold addon using `odoo-module-scaffold` skill
-2. Division → Site → Zone hierarchy models
-3. Security groups + ACL + record rules (per `docs/security_design.md`)
-4. `./scripts/install_addon.sh agri_base_masterdata`
-5. Validate: create Division → Site → Zone; confirm group ACL blocks unauthorized access
+Before scaffolding, add sequence data to `agri_biological_batches`:
+- Create `addons/agri_biological_batches/data/sequences.xml`
+- Define `ir.sequence` for `agri.biological.batch` (code: `agri.biological.batch`)
+- Add to manifest data list (before views)
 
-Key implementation notes (from locked decisions):
-- `site_id` Many2one (not M2M) on `res.users`
-- `shed_manager` gets `purchase.group_purchase_user`
-- Gate methods check `group_shed_manager` (farm_admin inherits via `implied_ids`)
-- finance_user has no record rule restrictions
+Then scaffold `agri_duck_ops`:
+1. `agri.flock.batch` (inherits/extends base batch): adds batch_type selection, breed, flock-specific fields
+2. `agri.flock.mortality`: mortality event → stock write-off gate (same transaction)
+3. `agri.flock.feed.line`: daily feed consumption → stock.move gate
+4. `agri.flock.egg.collection`: egg collection → finished goods stock.move
+5. `agri.flock.manure.capture`: manure → byproduct inventory stock.move
+6. Use `odoo-lifecycle-gate` skill for each gate implementation
+7. Install and validate each gate end-to-end in Odoo UI
 
 ---
 

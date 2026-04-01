@@ -1,0 +1,13 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_agri_division_operator,agri.division operator,model_agri_division,agri_base_masterdata.group_farm_operator,1,0,0,0
+access_agri_division_manager,agri.division manager,model_agri_division,agri_base_masterdata.group_shed_manager,1,0,0,0
+access_agri_division_finance,agri.division finance,model_agri_division,agri_base_masterdata.group_finance_user,1,0,0,0
+access_agri_division_admin,agri.division admin,model_agri_division,agri_base_masterdata.group_farm_admin,1,1,1,1
+access_agri_site_operator,agri.site operator,model_agri_site,agri_base_masterdata.group_farm_operator,1,0,0,0
+access_agri_site_manager,agri.site manager,model_agri_site,agri_base_masterdata.group_shed_manager,1,0,0,0
+access_agri_site_finance,agri.site finance,model_agri_site,agri_base_masterdata.group_finance_user,1,0,0,0
+access_agri_site_admin,agri.site admin,model_agri_site,agri_base_masterdata.group_farm_admin,1,1,1,1
+access_agri_zone_operator,agri.zone operator,model_agri_zone,agri_base_masterdata.group_farm_operator,1,0,0,0
+access_agri_zone_manager,agri.zone manager,model_agri_zone,agri_base_masterdata.group_shed_manager,1,0,0,0
+access_agri_zone_finance,agri.zone finance,model_agri_zone,agri_base_masterdata.group_finance_user,1,0,0,0
+access_agri_zone_admin,agri.zone admin,model_agri_zone,agri_base_masterdata.group_farm_admin,1,1,1,1

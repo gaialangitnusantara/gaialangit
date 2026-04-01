@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!--
+        Odoo 19 group definition pattern:
+            ir.module.category  (top-level app category)
+                └── res.groups.privilege  (groups by function, has category_id)
+                        └── res.groups  (actual group, has privilege_id — NOT category_id)
+
+        Hierarchy via implied_ids:
+            group_farm_admin ⊃ group_shed_manager ⊃ group_farm_operator
+            group_finance_user  (standalone)
+    -->
+
+    <!-- ── Module categories ────────────────────────────────────────────── -->
+    <record id="module_category_gaialangit" model="ir.module.category">
+        <field name="name">Gaialangit</field>
+        <field name="sequence">100</field>
+    </record>
+
+    <!-- ── Privileges (Odoo 19: groups are attached to a privilege) ─────── -->
+    <record id="privilege_farm_operations" model="res.groups.privilege">
+        <field name="name">Farm Operations</field>
+        <field name="category_id" ref="module_category_gaialangit"/>
+        <field name="sequence">10</field>
+    </record>
+
+    <record id="privilege_farm_finance" model="res.groups.privilege">
+        <field name="name">Farm Finance</field>
+        <field name="category_id" ref="module_category_gaialangit"/>
+        <field name="sequence">20</field>
+    </record>
+
+    <!-- ── Security groups ──────────────────────────────────────────────── -->
+
+    <!-- group_farm_operator: daily data entry on active batches -->
+    <record id="group_farm_operator" model="res.groups">
+        <field name="name">Farm Operator</field>
+        <field name="sequence">10</field>
+        <field name="privilege_id" ref="privilege_farm_operations"/>
+        <field name="comment">
+            Daily data entry: feed consumption, egg collection, mortality,
+            health observations on active batches. Read-only on configuration.
+        </field>
+    </record>
+
+    <!-- group_shed_manager: batch lifecycle + gate postings + POs -->
+    <record id="group_shed_manager" model="res.groups">
+        <field name="name">Shed Manager</field>
+        <field name="sequence">20</field>
+        <field name="privilege_id" ref="privilege_farm_operations"/>
+        <field name="implied_ids" eval="[(4, ref('group_farm_operator'))]"/>
+        <field name="comment">
+            Manages flock batch lifecycle: create, place, gate postings, close.
+            Creates and confirms purchase orders. Assigned to one site (1:1).
+        </field>
+    </record>
+
+    <!-- group_farm_admin: full configuration access -->
+    <record id="group_farm_admin" model="res.groups">
+        <field name="name">Farm Administrator</field>
+        <field name="sequence">30</field>
+        <field name="privilege_id" ref="privilege_farm_operations"/>
+        <field name="implied_ids" eval="[(4, ref('group_shed_manager'))]"/>
+        <field name="comment">
+            Full configuration and operational access.
+            Manages master data, security assignments, and all gate operations.
+        </field>
+    </record>
+
+    <!-- group_finance_user: WIP journal entries and cost reports (standalone) -->
+    <record id="group_finance_user" model="res.groups">
+        <field name="name">Farm Finance User</field>
+        <field name="sequence">10</field>
+        <field name="privilege_id" ref="privilege_farm_finance"/>
+        <field name="comment">
+            Views cost summaries and posts manual WIP journal entries.
+            Read-only on all operational data. Sees all divisions (no filter).
+        </field>
+    </record>
+
+</odoo>

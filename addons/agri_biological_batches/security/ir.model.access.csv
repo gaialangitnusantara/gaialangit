@@ -1,0 +1,5 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_bio_batch_operator,agri.biological.batch operator,model_agri_biological_batch,agri_base_masterdata.group_farm_operator,1,0,0,0
+access_bio_batch_manager,agri.biological.batch manager,model_agri_biological_batch,agri_base_masterdata.group_shed_manager,1,1,1,0
+access_bio_batch_finance,agri.biological.batch finance,model_agri_biological_batch,agri_base_masterdata.group_finance_user,1,0,0,0
+access_bio_batch_admin,agri.biological.batch admin,model_agri_biological_batch,agri_base_masterdata.group_farm_admin,1,1,1,1

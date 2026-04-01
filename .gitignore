@@ -1,0 +1,33 @@
+# Environment
+.env
+*.pyc
+__pycache__/
+*.pyo
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docker volumes (managed by compose)
+pgdata/
+
+# Python
+*.egg-info/
+dist/
+build/
+venv/
+.venv/
+
+# Odoo
+filestore/
+sessions/
+
+# Logs
+*.log

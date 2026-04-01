@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(docker --version)",
+      "Bash(docker compose:*)",
+      "Bash(open -a Docker)",
+      "Bash(docker info:*)",
+      "Bash(docker run:*)",
+      "Bash(docker exec:*)"
+    ]
+  }
+}

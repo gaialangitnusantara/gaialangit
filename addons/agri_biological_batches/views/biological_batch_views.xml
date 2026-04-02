@@ -79,8 +79,8 @@
                         <page name="sync" string="Stock Sync">
                             <group>
                                 <field name="last_gate_sync" readonly="1"/>
-                                <field name="odoo_stock_state" readonly="1"/>
                             </group>
+                            <field name="stock_sync_display" readonly="1" nolabel="1" widget="html"/>
                         </page>
                         <page name="notes" string="Notes">
                             <field name="notes" nolabel="1"/>

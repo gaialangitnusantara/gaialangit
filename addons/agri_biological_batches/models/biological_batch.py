@@ -1,3 +1,4 @@
+import json
 from odoo import models, fields, api
 from odoo.exceptions import UserError
 
@@ -48,7 +49,40 @@ class BiologicalBatch(models.Model):
         string='Stock State (JSON)', readonly=True,
         help='JSON snapshot of relevant stock.quant values at last gate sync.',
     )
+    stock_sync_display = fields.Html(
+        string='Last Gate Snapshot',
+        compute='_compute_stock_sync_display',
+        readonly=True,
+    )
     notes = fields.Text(string='Notes')
+
+    @api.depends('odoo_stock_state', 'last_gate_sync')
+    def _compute_stock_sync_display(self):
+        labels = {
+            'live_birds': 'Live Birds (head)',
+            'cumulative_mortality': 'Mortality (head)',
+            'cumulative_eggs': 'Eggs Collected (butir)',
+            'total_feed_consumed': 'Feed Consumed (kg)',
+            'total_manure_kg': 'Manure Captured (kg)',
+            'snapshot_time': 'Snapshot Time',
+        }
+        for rec in self:
+            if not rec.odoo_stock_state:
+                rec.stock_sync_display = '<p style="color:#888;">No gate sync recorded yet.</p>'
+                continue
+            try:
+                data = json.loads(rec.odoo_stock_state)
+            except (ValueError, TypeError):
+                rec.stock_sync_display = f'<pre>{rec.odoo_stock_state}</pre>'
+                continue
+            rows = ''.join(
+                f'<tr><td style="padding:2px 12px 2px 0;color:#555;">{labels.get(k, k)}</td>'
+                f'<td style="padding:2px 0;font-weight:500;">{v}</td></tr>'
+                for k, v in data.items()
+            )
+            rec.stock_sync_display = (
+                f'<table style="border-collapse:collapse;font-size:13px;">{rows}</table>'
+            )
 
     @api.model_create_multi
     def create(self, vals_list):

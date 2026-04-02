@@ -1,0 +1,221 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!--
+        3A-8: Batch Cost Summary Report
+
+        Read-only printable report for Finance.
+        Shows per-batch: DOD/pullet cost, feed cost, mortality loss,
+        output quantities (eggs, meat), and manure captured.
+
+        PURPOSE: Support manual WIP journal entries.
+        NO auto-posting. NO journal creation. Finance reads this to prepare JEs.
+
+        Standard price is used as the cost approximation. Actual cost from
+        purchase order lines may differ (Finance should cross-check PO lines).
+    -->
+
+    <!-- Report action (print button on flock batch form) -->
+    <record id="action_report_batch_cost_summary" model="ir.actions.report">
+        <field name="name">Batch Cost Summary</field>
+        <field name="model">agri.biological.batch</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">agri_duck_ops.report_batch_cost_summary</field>
+        <field name="report_file">agri_duck_ops.report_batch_cost_summary</field>
+        <field name="binding_model_id" ref="agri_biological_batches.model_agri_biological_batch"/>
+        <field name="binding_type">report</field>
+    </record>
+
+    <!-- QWeb template -->
+    <template id="report_batch_cost_summary">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="batch">
+                <t t-call="web.external_layout">
+                    <div class="page">
+                        <h2>Flock Batch Cost Summary</h2>
+                        <h3>
+                            <t t-esc="batch.name"/>
+                            — <t t-esc="dict(batch._fields['batch_type'].selection).get(batch.batch_type, batch.batch_type)"/>
+                            <t t-if="batch.breed"> (<t t-esc="batch.breed"/>)</t>
+                        </h3>
+
+                        <!-- Batch header info -->
+                        <table class="table table-sm" style="width:100%; margin-bottom:1em">
+                            <tr>
+                                <td><strong>Division</strong></td>
+                                <td><t t-esc="batch.division_id.name"/></td>
+                                <td><strong>Site</strong></td>
+                                <td><t t-esc="batch.site_id.name"/></td>
+                            </tr>
+                            <tr>
+                                <td><strong>Zone</strong></td>
+                                <td><t t-esc="batch.zone_id.name"/></td>
+                                <td><strong>State</strong></td>
+                                <td><t t-esc="batch.state"/></td>
+                            </tr>
+                            <tr>
+                                <td><strong>Start Date</strong></td>
+                                <td><t t-esc="batch.start_date"/></td>
+                                <td><strong>Placement Date</strong></td>
+                                <td><t t-esc="batch.placement_date"/></td>
+                            </tr>
+                            <tr>
+                                <td><strong>End Date</strong></td>
+                                <td><t t-esc="batch.end_date or '—'"/></td>
+                                <td><strong>Last Gate Sync</strong></td>
+                                <td><t t-esc="batch.last_gate_sync"/></td>
+                            </tr>
+                        </table>
+
+                        <!-- Head Count Summary -->
+                        <h4>Head Count</h4>
+                        <table class="table table-sm table-bordered" style="width:60%">
+                            <tr>
+                                <th>Initial Count (DOD placed)</th>
+                                <td><t t-esc="batch.initial_count"/></td>
+                            </tr>
+                            <tr>
+                                <th>Cumulative Mortality</th>
+                                <td><t t-esc="batch.cumulative_mortality"/></td>
+                            </tr>
+                            <tr>
+                                <th>Harvested Count</th>
+                                <td><t t-esc="batch.harvest_count"/></td>
+                            </tr>
+                            <tr class="table-info">
+                                <th>Current Head Count</th>
+                                <td><strong><t t-esc="batch.current_count"/></strong></td>
+                            </tr>
+                        </table>
+
+                        <!-- Cost Summary (for manual WIP JE) -->
+                        <h4>Cost Summary <small class="text-muted">(approximate — uses standard price)</small></h4>
+                        <table class="table table-sm table-bordered" style="width:80%">
+                            <thead>
+                                <tr class="table-secondary">
+                                    <th>Cost Item</th>
+                                    <th class="text-right">Amount</th>
+                                    <th>Basis</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>DOD / Pullet Cost</td>
+                                    <td class="text-right">
+                                        <t t-esc="'{:,.2f}'.format(batch.total_dod_cost)"/>
+                                    </td>
+                                    <td>
+                                        <t t-esc="batch.initial_count"/> birds ×
+                                        <t t-esc="batch.live_bird_product_id.standard_price if batch.live_bird_product_id else 0"/> std price
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>Total Feed Cost</td>
+                                    <td class="text-right">
+                                        <t t-esc="'{:,.2f}'.format(batch.total_feed_cost)"/>
+                                    </td>
+                                    <td>Sum of confirmed feed logs × std price</td>
+                                </tr>
+                                <tr class="table-warning">
+                                    <td>Mortality Loss Value</td>
+                                    <td class="text-right">
+                                        <t t-esc="'{:,.2f}'.format(batch.total_mortality_loss)"/>
+                                    </td>
+                                    <td>
+                                        <t t-esc="batch.cumulative_mortality"/> birds ×
+                                        <t t-esc="batch.live_bird_product_id.standard_price if batch.live_bird_product_id else 0"/> std price
+                                    </td>
+                                </tr>
+                                <tr class="table-primary">
+                                    <th>Total Input Cost</th>
+                                    <td class="text-right">
+                                        <strong>
+                                            <t t-esc="'{:,.2f}'.format(batch.total_dod_cost + batch.total_feed_cost)"/>
+                                        </strong>
+                                    </td>
+                                    <td></td>
+                                </tr>
+                            </tbody>
+                        </table>
+
+                        <!-- Output Summary -->
+                        <h4>Output Summary</h4>
+                        <table class="table table-sm table-bordered" style="width:80%">
+                            <thead>
+                                <tr class="table-secondary">
+                                    <th>Output Type</th>
+                                    <th class="text-right">Quantity</th>
+                                    <th>Unit</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Eggs Collected</td>
+                                    <td class="text-right"><t t-esc="batch.cumulative_eggs"/></td>
+                                    <td>pcs</td>
+                                </tr>
+                                <tr>
+                                    <td>Meat Harvested (birds)</td>
+                                    <td class="text-right"><t t-esc="batch.harvest_count"/></td>
+                                    <td>birds</td>
+                                </tr>
+                                <tr>
+                                    <td>Meat Harvested (weight)</td>
+                                    <td class="text-right">
+                                        <t t-esc="'{:,.2f}'.format(sum(h.meat_weight_kg for h in batch.harvest_ids.filtered(lambda h: h.state == 'confirmed')))"/>
+                                    </td>
+                                    <td>kg</td>
+                                </tr>
+                                <tr>
+                                    <td>Manure Captured</td>
+                                    <td class="text-right">
+                                        <t t-esc="'{:,.2f}'.format(sum(m.estimated_kg for m in batch.manure_log_ids.filtered(lambda m: m.state == 'confirmed')))"/>
+                                    </td>
+                                    <td>kg</td>
+                                </tr>
+                            </tbody>
+                        </table>
+
+                        <!-- Feed Detail -->
+                        <t t-if="batch.feed_log_ids.filtered(lambda l: l.state == 'confirmed')">
+                            <h4>Feed Consumption Detail</h4>
+                            <table class="table table-sm table-bordered" style="width:100%">
+                                <thead>
+                                    <tr class="table-secondary">
+                                        <th>Date</th>
+                                        <th>Product</th>
+                                        <th class="text-right">Quantity</th>
+                                        <th>Unit</th>
+                                        <th class="text-right">Std Price</th>
+                                        <th class="text-right">Cost</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <t t-foreach="batch.feed_log_ids.filtered(lambda l: l.state == 'confirmed')" t-as="log">
+                                        <tr>
+                                            <td><t t-esc="log.date"/></td>
+                                            <td><t t-esc="log.product_id.name"/></td>
+                                            <td class="text-right"><t t-esc="log.quantity"/></td>
+                                            <td><t t-esc="log.uom_id.name"/></td>
+                                            <td class="text-right"><t t-esc="'{:,.2f}'.format(log.product_id.standard_price)"/></td>
+                                            <td class="text-right"><t t-esc="'{:,.2f}'.format(log.quantity * log.product_id.standard_price)"/></td>
+                                        </tr>
+                                    </t>
+                                </tbody>
+                            </table>
+                        </t>
+
+                        <!-- Finance note -->
+                        <div style="margin-top:2em; padding:1em; border:1px solid #ccc; background:#f9f9f9">
+                            <strong>Finance Note:</strong>
+                            This report uses standard prices as cost approximation.
+                            For WIP journal entries, cross-reference purchase order lines for actual DOD/feed costs.
+                            No journal entries are auto-posted by this report.
+                            Prepare manual WIP JE using this summary as a reference.
+                        </div>
+                    </div>
+                </t>
+            </t>
+        </t>
+    </template>
+
+</odoo>

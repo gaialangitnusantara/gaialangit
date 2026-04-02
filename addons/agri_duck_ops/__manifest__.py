@@ -1,0 +1,23 @@
+{
+    'name': 'Agriculture - Duck Operations',
+    'version': '19.0.1.0.0',
+    'category': 'Agriculture',
+    'summary': 'Duck flock lifecycle with all gate postings',
+    'author': 'Gaialangit',
+    'license': 'LGPL-3',
+    'depends': ['agri_biological_batches', 'stock'],
+    'data': [
+        'security/ir.model.access.csv',
+        'views/flock_batch_views.xml',
+        'views/flock_feed_log_views.xml',
+        'views/flock_mortality_views.xml',
+        'views/flock_egg_collection_views.xml',
+        'views/flock_harvest_views.xml',
+        'views/flock_manure_log_views.xml',
+        'views/menus.xml',
+        'report/batch_cost_summary.xml',
+    ],
+    'installable': True,
+    'application': False,
+    'auto_install': False,
+}

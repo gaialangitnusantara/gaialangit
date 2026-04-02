@@ -1,0 +1,299 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!--
+        Duck Flock Batch views.
+
+        These are standalone views (not inherited from base biological_batch views)
+        used exclusively by the Duck Flock action. The base "All Batches" admin view
+        remains unaffected.
+
+        Verified external ID NOT used (standalone views, no parent inheritance).
+    -->
+
+    <!-- List view -->
+    <record id="view_flock_batch_list" model="ir.ui.view">
+        <field name="name">agri.biological.batch.duck.list</field>
+        <field name="model">agri.biological.batch</field>
+        <field name="priority">12</field>
+        <field name="arch" type="xml">
+            <list decoration-muted="state == 'cancelled'"
+                  decoration-success="state == 'closed'"
+                  decoration-info="state == 'placed'"
+                  decoration-warning="state in ('laying', 'finishing', 'harvesting')">
+                <field name="name"/>
+                <field name="batch_type"/>
+                <field name="breed" optional="show"/>
+                <field name="division_id"/>
+                <field name="site_id"/>
+                <field name="zone_id"/>
+                <field name="start_date"/>
+                <field name="placement_date" optional="show"/>
+                <field name="initial_count"/>
+                <field name="cumulative_mortality" optional="show"/>
+                <field name="current_count"/>
+                <field name="cumulative_eggs" optional="show"/>
+                <field name="state" widget="badge"
+                       decoration-info="state in ('draft', 'placed')"
+                       decoration-warning="state in ('laying', 'finishing', 'harvesting')"
+                       decoration-success="state == 'closed'"
+                       decoration-danger="state == 'cancelled'"/>
+                <field name="last_gate_sync" optional="hide"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- Form view (duck-specific, standalone) -->
+    <record id="view_flock_batch_form" model="ir.ui.view">
+        <field name="name">agri.biological.batch.duck.form</field>
+        <field name="model">agri.biological.batch</field>
+        <field name="priority">12</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <!-- Input gate -->
+                    <button name="action_place_flock"
+                            string="Place Flock"
+                            type="object"
+                            class="btn-primary"
+                            invisible="state != 'draft'"
+                            confirm="Transfer birds from receiving location to flock location. Ensure sufficient stock is available with the correct lot."/>
+                    <!-- Duck phase transitions -->
+                    <button name="action_start_laying"
+                            string="Start Laying"
+                            type="object"
+                            invisible="state != 'placed' or batch_type != 'layer'"/>
+                    <button name="action_start_finishing"
+                            string="Start Finishing"
+                            type="object"
+                            invisible="state != 'placed' or batch_type not in ('broiler', 'breeder')"/>
+                    <button name="action_start_harvesting"
+                            string="Start Harvesting"
+                            type="object"
+                            invisible="state not in ('placed', 'laying', 'finishing')"/>
+                    <button name="action_close"
+                            string="Close Batch"
+                            type="object"
+                            invisible="state not in ('placed', 'laying', 'finishing', 'harvesting')"
+                            confirm="Close this flock batch? This marks it as complete."/>
+                    <!-- Reconciliation -->
+                    <button name="action_reconciliation_check"
+                            string="Check Reconciliation"
+                            type="object"
+                            invisible="state not in ('placed', 'laying', 'finishing', 'harvesting')"/>
+                    <!-- Cancel / reset -->
+                    <button name="action_cancel"
+                            string="Cancel"
+                            type="object"
+                            invisible="state in ('closed', 'cancelled')"
+                            confirm="Cancel this flock batch?"/>
+                    <button name="action_reset_draft"
+                            string="Reset to Draft"
+                            type="object"
+                            invisible="state != 'cancelled'"/>
+
+                    <field name="state" widget="statusbar"
+                           statusbar_visible="draft,placed,laying,finishing,harvesting,closed"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <h1><field name="name" readonly="1"/></h1>
+                    </div>
+                    <group>
+                        <group string="Identification">
+                            <field name="batch_type"/>
+                            <field name="breed"/>
+                            <field name="start_date"/>
+                            <field name="end_date"/>
+                            <field name="placement_date" readonly="1"/>
+                        </group>
+                        <group string="Farm Location">
+                            <field name="division_id"/>
+                            <field name="site_id"
+                                   domain="[('division_id', '=', division_id)]"/>
+                            <field name="zone_id"
+                                   domain="[('site_id', '=', site_id)]"/>
+                        </group>
+                    </group>
+                    <group>
+                        <group string="Head Count">
+                            <field name="initial_count"/>
+                            <field name="cumulative_mortality" readonly="1"/>
+                            <field name="harvest_count" readonly="1"/>
+                            <field name="current_count" readonly="1"/>
+                            <field name="cumulative_eggs" readonly="1"/>
+                        </group>
+                        <group string="Stock Links">
+                            <field name="live_bird_product_id"/>
+                            <field name="lot_id"
+                                   domain="[('product_id', '=', live_bird_product_id)]"/>
+                            <field name="flock_location_id"/>
+                            <field name="receiving_location_id"/>
+                        </group>
+                    </group>
+                    <group string="Output Products">
+                        <field name="egg_product_id"/>
+                        <field name="meat_product_id"/>
+                        <field name="manure_product_id"/>
+                    </group>
+
+                    <notebook>
+                        <page name="feed" string="Feed Logs">
+                            <field name="feed_log_ids"
+                                   context="{'default_batch_id': id}">
+                                <list string="Feed Logs"
+                                      decoration-muted="state == 'confirmed'">
+                                    <field name="date"/>
+                                    <field name="product_id"/>
+                                    <field name="quantity"/>
+                                    <field name="uom_id"/>
+                                    <field name="lot_id" optional="show"/>
+                                    <field name="state" widget="badge"
+                                           decoration-info="state == 'draft'"
+                                           decoration-success="state == 'confirmed'"/>
+                                    <button name="action_confirm"
+                                            string="Confirm"
+                                            type="object"
+                                            invisible="state != 'draft'"
+                                            icon="fa-check"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page name="mortality" string="Mortality">
+                            <field name="mortality_ids"
+                                   context="{'default_batch_id': id}">
+                                <list string="Mortality Events"
+                                      decoration-muted="state == 'confirmed'">
+                                    <field name="date"/>
+                                    <field name="quantity"/>
+                                    <field name="cause"/>
+                                    <field name="notes" optional="show"/>
+                                    <field name="state" widget="badge"
+                                           decoration-info="state == 'draft'"
+                                           decoration-danger="state == 'confirmed'"/>
+                                    <button name="action_confirm"
+                                            string="Confirm"
+                                            type="object"
+                                            invisible="state != 'draft'"
+                                            icon="fa-check"
+                                            confirm="Confirm mortality? This will create a stock write-off in the same transaction."/>
+                                </list>
+                            </field>
+                        </page>
+                        <page name="eggs" string="Egg Collections"
+                              invisible="batch_type != 'layer'">
+                            <field name="egg_collection_ids"
+                                   context="{'default_batch_id': id}">
+                                <list string="Egg Collections">
+                                    <field name="date"/>
+                                    <field name="quantity"/>
+                                    <field name="grade"/>
+                                    <field name="lot_id" optional="show" readonly="1"/>
+                                    <field name="notes" optional="show"/>
+                                    <field name="state" widget="badge"
+                                           decoration-info="state == 'draft'"
+                                           decoration-success="state == 'confirmed'"/>
+                                    <button name="action_confirm"
+                                            string="Confirm"
+                                            type="object"
+                                            invisible="state != 'draft'"
+                                            icon="fa-check"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page name="harvest" string="Harvest">
+                            <field name="harvest_ids"
+                                   context="{'default_batch_id': id}">
+                                <list string="Harvest Records">
+                                    <field name="date"/>
+                                    <field name="harvest_count"/>
+                                    <field name="meat_weight_kg"/>
+                                    <field name="lot_id" optional="show" readonly="1"/>
+                                    <field name="notes" optional="show"/>
+                                    <field name="state" widget="badge"
+                                           decoration-info="state == 'draft'"
+                                           decoration-success="state == 'confirmed'"/>
+                                    <button name="action_confirm"
+                                            string="Confirm"
+                                            type="object"
+                                            invisible="state != 'draft'"
+                                            icon="fa-check"
+                                            confirm="Confirm harvest? This will create stock moves for bird consumption and meat output."/>
+                                </list>
+                            </field>
+                        </page>
+                        <page name="manure" string="Manure">
+                            <field name="manure_log_ids"
+                                   context="{'default_batch_id': id}">
+                                <list string="Manure Logs">
+                                    <field name="date"/>
+                                    <field name="estimated_kg"/>
+                                    <field name="lot_id" optional="show" readonly="1"/>
+                                    <field name="notes" optional="show"/>
+                                    <field name="state" widget="badge"
+                                           decoration-info="state == 'draft'"
+                                           decoration-success="state == 'confirmed'"/>
+                                    <button name="action_confirm"
+                                            string="Confirm"
+                                            type="object"
+                                            invisible="state != 'draft'"
+                                            icon="fa-check"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page name="cost_summary" string="Cost Summary">
+                            <group string="Cost Summary (for Finance — manual JE reference)">
+                                <field name="total_dod_cost" readonly="1"/>
+                                <field name="total_feed_cost" readonly="1"/>
+                                <field name="total_mortality_loss" readonly="1"/>
+                            </group>
+                            <group string="Output Summary">
+                                <field name="cumulative_eggs" readonly="1"/>
+                                <field name="harvest_count" readonly="1"/>
+                            </group>
+                            <p class="text-muted">
+                                DOD/Pullet cost uses standard price × initial count (approximation).
+                                For exact cost, refer to purchase order lines.
+                                No journal entries are auto-posted — use this summary
+                                to prepare manual WIP journal entries.
+                            </p>
+                        </page>
+                        <page name="sync" string="Stock Sync">
+                            <group>
+                                <field name="last_gate_sync" readonly="1"/>
+                                <field name="odoo_stock_state" readonly="1"/>
+                            </group>
+                        </page>
+                        <page name="notes_tab" string="Notes">
+                            <field name="notes" nolabel="1"/>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <!-- Action for Duck Flock Batches (domain-filtered, uses duck views) -->
+    <record id="action_agri_flock_batch" model="ir.actions.act_window">
+        <field name="name">Duck Flock Batches</field>
+        <field name="res_model">agri.biological.batch</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('batch_type', 'in', ('layer', 'broiler', 'breeder'))]</field>
+        <field name="context">{'default_batch_type': 'layer'}</field>
+    </record>
+
+    <!-- Bind duck-specific views to the duck action -->
+    <record id="act_window_view_flock_batch_list" model="ir.actions.act_window.view">
+        <field name="sequence">1</field>
+        <field name="view_mode">list</field>
+        <field name="view_id" ref="view_flock_batch_list"/>
+        <field name="act_window_id" ref="action_agri_flock_batch"/>
+    </record>
+    <record id="act_window_view_flock_batch_form" model="ir.actions.act_window.view">
+        <field name="sequence">2</field>
+        <field name="view_mode">form</field>
+        <field name="view_id" ref="view_flock_batch_form"/>
+        <field name="act_window_id" ref="action_agri_flock_batch"/>
+    </record>
+
+</odoo>

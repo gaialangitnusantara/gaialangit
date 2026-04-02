@@ -7,6 +7,7 @@
     'license': 'LGPL-3',
     'depends': ['agri_base_masterdata', 'mail'],
     'data': [
+        'data/sequences.xml',
         'security/security.xml',
         'security/ir.model.access.csv',
         'views/biological_batch_views.xml',

@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!--
+        Duck Operations menus under Farming → Duck Ops
+        groups attribute must be a single comma-separated line (no whitespace around commas).
+    -->
+
+    <menuitem id="menu_duck_ops"
+              name="Duck Operations"
+              parent="agri_base_masterdata.menu_farming_root"
+              sequence="20"
+              groups="agri_base_masterdata.group_farm_operator,agri_base_masterdata.group_shed_manager,agri_base_masterdata.group_finance_user,agri_base_masterdata.group_farm_admin"/>
+
+    <menuitem id="menu_duck_flock_batch"
+              name="Flock Batches"
+              parent="menu_duck_ops"
+              action="action_agri_flock_batch"
+              sequence="10"
+              groups="agri_base_masterdata.group_shed_manager,agri_base_masterdata.group_finance_user,agri_base_masterdata.group_farm_admin"/>
+
+    <menuitem id="menu_duck_daily_ops"
+              name="Daily Operations"
+              parent="menu_duck_ops"
+              sequence="20"
+              groups="agri_base_masterdata.group_farm_operator,agri_base_masterdata.group_shed_manager,agri_base_masterdata.group_farm_admin"/>
+
+    <menuitem id="menu_duck_feed_log"
+              name="Feed Logs"
+              parent="menu_duck_daily_ops"
+              action="action_agri_flock_feed_log"
+              sequence="10"
+              groups="agri_base_masterdata.group_farm_operator,agri_base_masterdata.group_shed_manager,agri_base_masterdata.group_farm_admin"/>
+
+    <menuitem id="menu_duck_egg_collection"
+              name="Egg Collections"
+              parent="menu_duck_daily_ops"
+              action="action_agri_flock_egg_collection"
+              sequence="20"
+              groups="agri_base_masterdata.group_farm_operator,agri_base_masterdata.group_shed_manager,agri_base_masterdata.group_farm_admin"/>
+
+    <menuitem id="menu_duck_mortality"
+              name="Mortality Events"
+              parent="menu_duck_daily_ops"
+              action="action_agri_flock_mortality"
+              sequence="30"
+              groups="agri_base_masterdata.group_shed_manager,agri_base_masterdata.group_farm_admin"/>
+
+    <menuitem id="menu_duck_manure"
+              name="Manure Capture"
+              parent="menu_duck_daily_ops"
+              action="action_agri_flock_manure_log"
+              sequence="40"
+              groups="agri_base_masterdata.group_farm_operator,agri_base_masterdata.group_shed_manager,agri_base_masterdata.group_farm_admin"/>
+
+    <menuitem id="menu_duck_harvest"
+              name="Harvest"
+              parent="menu_duck_ops"
+              action="action_agri_flock_harvest"
+              sequence="30"
+              groups="agri_base_masterdata.group_shed_manager,agri_base_masterdata.group_farm_admin"/>
+
+</odoo>

@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_flock_harvest_list" model="ir.ui.view">
+        <field name="name">agri.flock.harvest.list</field>
+        <field name="model">agri.flock.harvest</field>
+        <field name="arch" type="xml">
+            <list string="Harvest Records">
+                <field name="batch_id"/>
+                <field name="date"/>
+                <field name="harvest_count"/>
+                <field name="meat_weight_kg"/>
+                <field name="lot_id" optional="show" readonly="1"/>
+                <field name="notes" optional="show"/>
+                <field name="state" widget="badge"
+                       decoration-info="state == 'draft'"
+                       decoration-success="state == 'confirmed'"/>
+                <button name="action_confirm"
+                        string="Confirm"
+                        type="object"
+                        invisible="state != 'draft'"
+                        icon="fa-check"
+                        confirm="Confirm harvest? Bird consumption and meat output stock moves will be created."/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_flock_harvest_form" model="ir.ui.view">
+        <field name="name">agri.flock.harvest.form</field>
+        <field name="model">agri.flock.harvest</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_confirm"
+                            string="Confirm Harvest"
+                            type="object"
+                            class="btn-primary"
+                            invisible="state != 'draft'"
+                            confirm="Confirm harvest? Two stock moves will be created: (1) live bird consumption, (2) meat output into finished goods. Both must succeed — if either fails, nothing is posted."/>
+                    <field name="state" widget="statusbar"
+                           statusbar_visible="draft,confirmed"/>
+                </header>
+                <sheet>
+                    <group>
+                        <group string="Harvest Details">
+                            <field name="batch_id"/>
+                            <field name="date"/>
+                            <field name="harvest_count"/>
+                            <field name="meat_weight_kg"/>
+                        </group>
+                        <group string="Stock Moves (auto-populated on confirm)">
+                            <field name="lot_id" readonly="1"/>
+                            <field name="move_consume_id" readonly="1"/>
+                            <field name="move_meat_id" readonly="1"/>
+                        </group>
+                    </group>
+                    <field name="notes" placeholder="Notes (optional)..."/>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_agri_flock_harvest" model="ir.actions.act_window">
+        <field name="name">Harvest Records</field>
+        <field name="res_model">agri.flock.harvest</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+</odoo>

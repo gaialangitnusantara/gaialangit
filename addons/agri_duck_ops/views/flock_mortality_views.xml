@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_flock_mortality_list" model="ir.ui.view">
+        <field name="name">agri.flock.mortality.list</field>
+        <field name="model">agri.flock.mortality</field>
+        <field name="arch" type="xml">
+            <list string="Mortality Events"
+                  decoration-muted="state == 'confirmed'">
+                <field name="batch_id"/>
+                <field name="date"/>
+                <field name="quantity"/>
+                <field name="cause"/>
+                <field name="notes" optional="show"/>
+                <field name="state" widget="badge"
+                       decoration-info="state == 'draft'"
+                       decoration-danger="state == 'confirmed'"/>
+                <button name="action_confirm"
+                        string="Confirm"
+                        type="object"
+                        invisible="state != 'draft'"
+                        icon="fa-check"
+                        confirm="Confirm mortality? A synchronized stock write-off will be created in the same transaction. This cannot be undone."/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_flock_mortality_form" model="ir.ui.view">
+        <field name="name">agri.flock.mortality.form</field>
+        <field name="model">agri.flock.mortality</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_confirm"
+                            string="Confirm Mortality"
+                            type="object"
+                            class="btn-danger"
+                            invisible="state != 'draft'"
+                            confirm="Confirm mortality? A stock write-off will be created for these birds in the same database transaction. This cannot be undone."/>
+                    <field name="state" widget="statusbar"
+                           statusbar_visible="draft,confirmed"/>
+                </header>
+                <sheet>
+                    <div class="alert alert-warning" role="alert"
+                         invisible="state != 'draft'">
+                        Confirming mortality creates an irreversible stock write-off.
+                        Verify quantity and cause before confirming.
+                    </div>
+                    <group>
+                        <group string="Mortality Event">
+                            <field name="batch_id"/>
+                            <field name="date"/>
+                            <field name="quantity"/>
+                            <field name="cause"/>
+                        </group>
+                        <group string="Stock Write-off">
+                            <field name="move_id" readonly="1"/>
+                        </group>
+                    </group>
+                    <field name="notes" placeholder="Notes (optional)..."/>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_agri_flock_mortality" model="ir.actions.act_window">
+        <field name="name">Mortality Events</field>
+        <field name="res_model">agri.flock.mortality</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+</odoo>

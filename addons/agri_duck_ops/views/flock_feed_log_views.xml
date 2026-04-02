@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_flock_feed_log_list" model="ir.ui.view">
+        <field name="name">agri.flock.feed.log.list</field>
+        <field name="model">agri.flock.feed.log</field>
+        <field name="arch" type="xml">
+            <list string="Feed Logs"
+                  decoration-muted="state == 'confirmed'">
+                <field name="batch_id"/>
+                <field name="date"/>
+                <field name="product_id"/>
+                <field name="quantity"/>
+                <field name="uom_id"/>
+                <field name="lot_id" optional="show"/>
+                <field name="state" widget="badge"
+                       decoration-info="state == 'draft'"
+                       decoration-success="state == 'confirmed'"/>
+                <button name="action_confirm"
+                        string="Confirm"
+                        type="object"
+                        invisible="state != 'draft'"
+                        icon="fa-check"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_flock_feed_log_form" model="ir.ui.view">
+        <field name="name">agri.flock.feed.log.form</field>
+        <field name="model">agri.flock.feed.log</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_confirm"
+                            string="Confirm"
+                            type="object"
+                            class="btn-primary"
+                            invisible="state != 'draft'"
+                            confirm="Confirm this feed log? A stock consumption move will be created."/>
+                    <field name="state" widget="statusbar"
+                           statusbar_visible="draft,confirmed"/>
+                </header>
+                <sheet>
+                    <group>
+                        <group string="Feed Record">
+                            <field name="batch_id"/>
+                            <field name="date"/>
+                            <field name="product_id"/>
+                            <field name="quantity"/>
+                            <field name="uom_id" readonly="1"/>
+                            <field name="lot_id"
+                                   domain="[('product_id', '=', product_id)]"/>
+                        </group>
+                        <group string="Stock Move">
+                            <field name="move_id" readonly="1"/>
+                        </group>
+                    </group>
+                    <field name="notes" placeholder="Notes..."/>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_agri_flock_feed_log" model="ir.actions.act_window">
+        <field name="name">Feed Logs</field>
+        <field name="res_model">agri.flock.feed.log</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+</odoo>

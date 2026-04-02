@@ -1,0 +1,21 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_flock_feed_operator,agri.flock.feed.log operator,model_agri_flock_feed_log,agri_base_masterdata.group_farm_operator,1,1,1,0
+access_flock_feed_manager,agri.flock.feed.log manager,model_agri_flock_feed_log,agri_base_masterdata.group_shed_manager,1,1,1,0
+access_flock_feed_finance,agri.flock.feed.log finance,model_agri_flock_feed_log,agri_base_masterdata.group_finance_user,1,0,0,0
+access_flock_feed_admin,agri.flock.feed.log admin,model_agri_flock_feed_log,agri_base_masterdata.group_farm_admin,1,1,1,1
+access_flock_mortality_operator,agri.flock.mortality operator,model_agri_flock_mortality,agri_base_masterdata.group_farm_operator,1,1,1,0
+access_flock_mortality_manager,agri.flock.mortality manager,model_agri_flock_mortality,agri_base_masterdata.group_shed_manager,1,1,1,0
+access_flock_mortality_finance,agri.flock.mortality finance,model_agri_flock_mortality,agri_base_masterdata.group_finance_user,1,0,0,0
+access_flock_mortality_admin,agri.flock.mortality admin,model_agri_flock_mortality,agri_base_masterdata.group_farm_admin,1,1,1,1
+access_flock_egg_operator,agri.flock.egg.collection operator,model_agri_flock_egg_collection,agri_base_masterdata.group_farm_operator,1,1,1,0
+access_flock_egg_manager,agri.flock.egg.collection manager,model_agri_flock_egg_collection,agri_base_masterdata.group_shed_manager,1,1,1,0
+access_flock_egg_finance,agri.flock.egg.collection finance,model_agri_flock_egg_collection,agri_base_masterdata.group_finance_user,1,0,0,0
+access_flock_egg_admin,agri.flock.egg.collection admin,model_agri_flock_egg_collection,agri_base_masterdata.group_farm_admin,1,1,1,1
+access_flock_harvest_operator,agri.flock.harvest operator,model_agri_flock_harvest,agri_base_masterdata.group_farm_operator,1,0,0,0
+access_flock_harvest_manager,agri.flock.harvest manager,model_agri_flock_harvest,agri_base_masterdata.group_shed_manager,1,1,1,0
+access_flock_harvest_finance,agri.flock.harvest finance,model_agri_flock_harvest,agri_base_masterdata.group_finance_user,1,0,0,0
+access_flock_harvest_admin,agri.flock.harvest admin,model_agri_flock_harvest,agri_base_masterdata.group_farm_admin,1,1,1,1
+access_flock_manure_operator,agri.flock.manure.log operator,model_agri_flock_manure_log,agri_base_masterdata.group_farm_operator,1,1,1,0
+access_flock_manure_manager,agri.flock.manure.log manager,model_agri_flock_manure_log,agri_base_masterdata.group_shed_manager,1,1,1,0
+access_flock_manure_finance,agri.flock.manure.log finance,model_agri_flock_manure_log,agri_base_masterdata.group_finance_user,1,0,0,0
+access_flock_manure_admin,agri.flock.manure.log admin,model_agri_flock_manure_log,agri_base_masterdata.group_farm_admin,1,1,1,1

@@ -19,3 +19,11 @@ access_flock_manure_operator,agri.flock.manure.log operator,model_agri_flock_man
 access_flock_manure_manager,agri.flock.manure.log manager,model_agri_flock_manure_log,agri_base_masterdata.group_shed_manager,1,1,1,0
 access_flock_manure_finance,agri.flock.manure.log finance,model_agri_flock_manure_log,agri_base_masterdata.group_finance_user,1,0,0,0
 access_flock_manure_admin,agri.flock.manure.log admin,model_agri_flock_manure_log,agri_base_masterdata.group_farm_admin,1,1,1,1
+access_flock_vaccine_operator,agri.flock.vaccine.log operator,model_agri_flock_vaccine_log,agri_base_masterdata.group_farm_operator,1,1,1,0
+access_flock_vaccine_manager,agri.flock.vaccine.log manager,model_agri_flock_vaccine_log,agri_base_masterdata.group_shed_manager,1,1,1,0
+access_flock_vaccine_finance,agri.flock.vaccine.log finance,model_agri_flock_vaccine_log,agri_base_masterdata.group_finance_user,1,0,0,0
+access_flock_vaccine_admin,agri.flock.vaccine.log admin,model_agri_flock_vaccine_log,agri_base_masterdata.group_farm_admin,1,1,1,1
+access_flock_batch_operator,agri.flock.batch operator,model_agri_flock_batch,agri_base_masterdata.group_farm_operator,1,0,0,0
+access_flock_batch_manager,agri.flock.batch manager,model_agri_flock_batch,agri_base_masterdata.group_shed_manager,1,1,1,0
+access_flock_batch_finance,agri.flock.batch finance,model_agri_flock_batch,agri_base_masterdata.group_finance_user,1,0,0,0
+access_flock_batch_admin,agri.flock.batch admin,model_agri_flock_batch,agri_base_masterdata.group_farm_admin,1,1,1,1

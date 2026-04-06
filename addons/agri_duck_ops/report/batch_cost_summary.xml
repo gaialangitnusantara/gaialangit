@@ -17,11 +17,11 @@
     <!-- Report action (print button on flock batch form) -->
     <record id="action_report_batch_cost_summary" model="ir.actions.report">
         <field name="name">Batch Cost Summary</field>
-        <field name="model">agri.biological.batch</field>
+        <field name="model">agri.flock.batch</field>
         <field name="report_type">qweb-pdf</field>
         <field name="report_name">agri_duck_ops.report_batch_cost_summary</field>
         <field name="report_file">agri_duck_ops.report_batch_cost_summary</field>
-        <field name="binding_model_id" ref="agri_biological_batches.model_agri_biological_batch"/>
+        <field name="binding_model_id" ref="agri_duck_ops.model_agri_flock_batch"/>
         <field name="binding_type">report</field>
     </record>
 
@@ -115,6 +115,13 @@
                                     </td>
                                     <td>Sum of confirmed feed logs × std price</td>
                                 </tr>
+                                <tr>
+                                    <td>Total Vaccine / Treatment Cost</td>
+                                    <td class="text-right">
+                                        <t t-esc="'{:,.2f}'.format(batch.total_vaccine_cost)"/>
+                                    </td>
+                                    <td>Sum of confirmed vaccine logs × std price</td>
+                                </tr>
                                 <tr class="table-warning">
                                     <td>Mortality Loss Value</td>
                                     <td class="text-right">
@@ -122,14 +129,16 @@
                                     </td>
                                     <td>
                                         <t t-esc="batch.cumulative_mortality"/> birds ×
-                                        <t t-esc="batch.live_bird_product_id.standard_price if batch.live_bird_product_id else 0"/> std price
+                                        (DOD price + avg rearing cost/bird).
+                                        Rearing = (feed + vaccine) /
+                                        <t t-esc="batch.initial_count"/> birds.
                                     </td>
                                 </tr>
                                 <tr class="table-primary">
                                     <th>Total Input Cost</th>
                                     <td class="text-right">
                                         <strong>
-                                            <t t-esc="'{:,.2f}'.format(batch.total_dod_cost + batch.total_feed_cost)"/>
+                                            <t t-esc="'{:,.2f}'.format(batch.total_dod_cost + batch.total_feed_cost + batch.total_vaccine_cost)"/>
                                         </strong>
                                     </td>
                                     <td></td>

@@ -1,7 +1,9 @@
 """
-Flock batch — duck-specific extension of agri.biological.batch.
+Flock batch — concrete duck model inheriting agri.biological.batch (AbstractModel).
 
-Extends the generic base model in-place (_inherit without _name) to add:
+Defines agri.flock.batch with _name = 'agri.flock.batch' and
+_inherit = ['agri.biological.batch'] to create its own database table.
+Adds:
   - batch_type overridden as Selection (layer/broiler/breeder)
   - Duck-specific states: placed → laying/finishing → harvesting → closed
   - Live-bird product, lot, flock location, and output product links
@@ -18,7 +20,10 @@ from odoo.exceptions import UserError, ValidationError
 
 
 class FlockBatch(models.Model):
-    _inherit = 'agri.biological.batch'
+    _name = 'agri.flock.batch'
+    _description = 'Duck Flock Batch'
+    _inherit = ['agri.biological.batch']
+    _order = 'start_date desc, name'
 
     # ── Override batch_type as duck-specific Selection ─────────────────────
     # Replaces the Char field in the base model. Column stays VARCHAR — no
@@ -111,6 +116,9 @@ class FlockBatch(models.Model):
     manure_log_ids = fields.One2many(
         'agri.flock.manure.log', 'batch_id', string='Manure Logs'
     )
+    vaccine_log_ids = fields.One2many(
+        'agri.flock.vaccine.log', 'batch_id', string='Vaccine / Treatment Logs'
+    )
 
     # ── Computed summary fields ───────────────────────────────────────────
     cumulative_mortality = fields.Integer(
@@ -153,11 +161,19 @@ class FlockBatch(models.Model):
         store=True,
         digits='Account',
     )
+    total_vaccine_cost = fields.Float(
+        string='Total Vaccine / Treatment Cost',
+        compute='_compute_cost_summary',
+        store=True,
+        digits='Account',
+    )
     total_mortality_loss = fields.Float(
         string='Mortality Loss Value',
         compute='_compute_cost_summary',
         store=True,
         digits='Account',
+        help='dead birds × (DOD price + average rearing cost per bird). '
+             'Rearing cost per bird = (feed cost + vaccine cost) / initial count.',
     )
 
     # ── Compute methods ───────────────────────────────────────────────────
@@ -195,33 +211,95 @@ class FlockBatch(models.Model):
             rec.current_count = rec.initial_count - rec.cumulative_mortality - rec.harvest_count
 
     @api.depends(
-        'initial_count', 'live_bird_product_id',
-        'feed_log_ids.quantity', 'feed_log_ids.product_id', 'feed_log_ids.state',
+        'initial_count',
+        'live_bird_product_id', 'live_bird_product_id.standard_price',
+        'feed_log_ids.quantity', 'feed_log_ids.state',
+        'feed_log_ids.product_id', 'feed_log_ids.product_id.standard_price',
+        'vaccine_log_ids.quantity', 'vaccine_log_ids.state',
+        'vaccine_log_ids.product_id', 'vaccine_log_ids.product_id.standard_price',
         'cumulative_mortality',
     )
     def _compute_cost_summary(self):
         for rec in self:
-            # Feed cost: sum of (qty * product standard_price) for confirmed logs
+            # Feed cost: sum of (qty × std_price) for confirmed feed logs
             feed_cost = sum(
                 log.quantity * log.product_id.standard_price
                 for log in rec.feed_log_ids.filtered(lambda l: l.state == 'confirmed')
             )
             rec.total_feed_cost = feed_cost
 
-            # DOD cost: initial_count * live_bird standard_price (approximation;
-            # actual cost is on the purchase order lines)
+            # Vaccine / treatment cost: same aggregation pattern as feed
+            vaccine_cost = sum(
+                log.quantity * log.product_id.standard_price
+                for log in rec.vaccine_log_ids.filtered(lambda l: l.state == 'confirmed')
+            )
+            rec.total_vaccine_cost = vaccine_cost
+
+            # DOD cost: initial_count × live_bird std_price (approximation;
+            # actual cost lives on the purchase order lines)
             if rec.live_bird_product_id:
                 rec.total_dod_cost = rec.initial_count * rec.live_bird_product_id.standard_price
             else:
                 rec.total_dod_cost = 0.0
 
-            # Mortality loss: cumulative_mortality * live_bird standard_price
+            # Mortality loss: dead birds × (DOD price + average rearing cost per bird)
+            # Rearing cost per bird = (cumulative feed + vaccine spent) / initial_count
+            # This reflects that each dead bird consumed a proportional share of feed
+            # and vaccine before dying, not just its DOD purchase price.
             if rec.live_bird_product_id:
+                dod_price = rec.live_bird_product_id.standard_price
+                rearing_cost_per_bird = (
+                    (feed_cost + vaccine_cost) / rec.initial_count
+                    if rec.initial_count > 0 else 0.0
+                )
                 rec.total_mortality_loss = (
-                    rec.cumulative_mortality * rec.live_bird_product_id.standard_price
+                    rec.cumulative_mortality * (dod_price + rearing_cost_per_bird)
                 )
             else:
                 rec.total_mortality_loss = 0.0
+
+    # ── Prevent accidental deletion of active batches ─────────────────────
+    def unlink(self):
+        """Block deletion of batches that have posted stock moves.
+
+        Rule 1 — State gate: only draft or cancelled batches may be deleted.
+        Active batches should be cancelled first (Cancel button), or archived.
+
+        Rule 2 — Confirmed children gate: if any gate record (feed, mortality,
+        egg, manure, harvest) is in state='confirmed', a real stock.move has
+        already been posted for it. Deleting the batch would cascade-delete
+        those gate records but leave the stock moves intact, silently orphaning
+        inventory. The caller must cancel (or delete) each confirmed gate
+        record individually before deleting the batch.
+
+        ondelete='cascade' on all gate models means draft-only children are
+        cleaned up automatically when an eligible batch is deleted.
+        """
+        for batch in self:
+            if batch.state not in ('draft', 'cancelled'):
+                raise UserError(
+                    f'Cannot delete batch {batch.name} (state={batch.state}).\n\n'
+                    f'Click Cancel first to move it to Cancelled state, '
+                    f'then delete. Or use Archive to preserve stock history.'
+                )
+            # Check for confirmed children that have live stock moves
+            confirmed_gate_records = (
+                len(batch.feed_log_ids.filtered(lambda r: r.state == 'confirmed'))
+                + len(batch.mortality_ids.filtered(lambda r: r.state == 'confirmed'))
+                + len(batch.egg_collection_ids.filtered(lambda r: r.state == 'confirmed'))
+                + len(batch.harvest_ids.filtered(lambda r: r.state == 'confirmed'))
+                + len(batch.manure_log_ids.filtered(lambda r: r.state == 'confirmed'))
+                + len(batch.vaccine_log_ids.filtered(lambda r: r.state == 'confirmed'))
+            )
+            if confirmed_gate_records:
+                raise UserError(
+                    f'Batch {batch.name} has {confirmed_gate_records} confirmed gate '
+                    f'record(s) with posted stock moves.\n\n'
+                    f'Deleting would orphan those inventory movements. '
+                    f'Use Archive (Action → Archive) to hide the batch without '
+                    f'corrupting inventory, or manually reverse the stock moves first.'
+                )
+        return super().unlink()
 
     # ── Override create to let computed current_count take over ──────────
     @api.model_create_multi

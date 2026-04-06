@@ -31,3 +31,12 @@ sessions/
 
 # Logs
 *.log
+
+# Backups — database dumps contain sensitive production data
+backups/
+
+# Claude Code internal files
+.claude/memory.db
+.claude/worktrees/
+.claude-flow/
+.swarm/

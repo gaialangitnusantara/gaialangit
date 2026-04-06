@@ -22,10 +22,10 @@ class FlockEggCollection(models.Model):
     _rec_name = 'display_name'
 
     batch_id = fields.Many2one(
-        'agri.biological.batch',
+        'agri.flock.batch',
         string='Flock Batch',
         required=True,
-        ondelete='restrict',
+        ondelete='cascade',
         index=True,
     )
     date = fields.Date(
@@ -92,6 +92,7 @@ class FlockEggCollection(models.Model):
         5. batch._update_gate_sync()
         """
         for rec in self:
+            rec.batch_id._check_gate_access()
             if rec.state != 'draft':
                 raise UserError('Egg collection is already confirmed.')
 

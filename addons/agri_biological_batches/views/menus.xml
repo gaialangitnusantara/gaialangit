@@ -1,19 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
     <!--
-        Batches menu under Farming — admin-only for now.
-        Duck-specific batch menus will be added in agri_duck_ops.
+        Batch menus are now defined in each slice module (agri_duck_ops/views/menus.xml).
+        The "All Batches" admin view has been replaced by slice-specific batch views.
     -->
-    <menuitem id="menu_farming_batches"
-              name="Batches"
-              parent="agri_base_masterdata.menu_farming_root"
-              sequence="10"
-              groups="agri_base_masterdata.group_farm_admin"/>
-
-    <menuitem id="menu_agri_bio_batch"
-              name="All Batches"
-              parent="menu_farming_batches"
-              action="action_agri_bio_batch"
-              sequence="10"
-              groups="agri_base_masterdata.group_farm_admin"/>
 </odoo>

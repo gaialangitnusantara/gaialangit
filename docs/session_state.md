@@ -10,8 +10,26 @@ Python target: 3.12
 ---
 
 ## Current phase
-**Phase 4 — Financial Hardening Pause** ✅ COMPLETE (2026-04-02)  
+**Phase 4 — Financial Hardening Pause** 🔄 IN PROGRESS (2026-04-03 — post-audit)
+
+### Pre-production audit (2026-04-03) — all Critical/High RESOLVED
+
+| ID | Severity | Finding | Status |
+|----|----------|---------|--------|
+| A-1 | Critical | `agri.biological.batch` was `models.Model` — all slices shared one table | ✅ FIXED: AbstractModel, `agri.flock.batch` concrete |
+| A-2 | High | Harvest gate: `move_consume._action_done()` called before `move_meat` was created | ✅ FIXED: both moves prepared before either `_action_done()` |
+| S-1 | High | `agri_duck_ops` manifest missing `purchase`, `purchase_stock` deps | ✅ FIXED: added to depends |
+| S-2 | High | Gate `action_confirm()` lacked explicit `_check_gate_access()` call | ✅ FIXED: added as first statement in all 6 gate loops |
+
+Open (non-blocking):
+- A-3: Verify `_get_scrap_location()` against live Odoo 19 instance
+- A-4: Cancel/reversal gate on all 6 gate models
+- S-3: `markupsafe.escape()` on `_compute_stock_sync_display()` f-strings
+- S-4: Admin tool to surface users with missing zone/site assignments
+- P-1: Create 5 duck CoA accounts in UI (codes TBD)
+- P-2: Security group UI login tests for all 4 roles  
 Status: Full simulated flock cycle passed all checks. Manual close procedure documented.
+60-day end-to-end layer simulation script created: `scripts/simulate_layer_flock.py`
 
 ### Phase 4 results
 - **All addons installed:** `agri_base_masterdata`, `agri_biological_batches`, `agri_duck_ops` (76 modules)
@@ -33,6 +51,19 @@ Status: Full simulated flock cycle passed all checks. Manual close procedure doc
   - Harvest: 100 birds, 75 kg meat
 
 - **Manual month-end close procedure:** documented in `docs/month_end_close.md`
+
+### agri_duck_ops additions (2026-04-02, post Phase 4)
+
+| Change | Detail |
+|--------|--------|
+| New model `agri.flock.vaccine.log` | Vaccine / medical treatment gate — identical stock pattern to feed log (WH/Stock → Production). Fields: product, qty, treatment_type (vaccination/treatment/prophylactic/supplement), optional lot, notes |
+| `total_vaccine_cost` on batch | Stored computed — sum of confirmed vaccine log qty × standard_price |
+| `mortality_loss` formula updated | Was: `dead × DOD_price`. Now: `dead × (DOD_price + (feed+vaccine)/initial_count)` — each dead bird carries its proportional share of rearing cost |
+| Batch form: Vaccine / Treatment tab | Between Feed and Manure tabs |
+| Daily Ops menu: Vaccine / Treatment | Sequence 35 (between Mortality and Manure) |
+| Cost summary report | Added vaccine cost row; updated mortality basis text; Total Input Cost now includes vaccine |
+| `ondelete='cascade'` on all gate models | Feed/Mortality/Egg/Harvest/Manure/Vaccine — batch deletion cascades to logs |
+| `unlink()` guard on batch | Blocks deletion of active batches; blocks deletion if confirmed gate records exist (orphaned moves) |
 
 ### Odoo 19 Discoveries (bugs fixed in agri_duck_ops)
 
@@ -225,11 +256,13 @@ Four groups defined before any addon scaffolding:
 - `group_finance_user`
 - `group_farm_admin`
 
-### 8. Flock batch inheritance strategy (Phase 3 decision)
-Used `_inherit = 'agri.biological.batch'` without `_name` (in-place extension).
-Duck-specific fields added to the same table. Acceptable for Slice 1.
-When Slice 2 (hydroponic) begins, evaluate whether to refactor base as abstract
-or add a separate `agri.crop.batch` model.
+### 8. Flock batch inheritance strategy (UPDATED: pre-production audit 2026-04-03)
+`agri.biological.batch` refactored to **AbstractModel** — no DB table.
+`agri.flock.batch` is a concrete model with `_name = 'agri.flock.batch'` and
+`_inherit = ['agri.biological.batch']`, defining its own DB table.
+Record rules and ACL for `agri.flock.batch` live in `agri_duck_ops`, not in
+`agri_biological_batches` (abstract models have no rows to restrict).
+When Slice 2 begins, add `agri.crop.batch` as a second concrete child.
 
 ---
 
@@ -290,23 +323,68 @@ Account codes will be assigned after `l10n_id` chart is installed and reviewed.
 
 ---
 
+## Accounting setup — completed 2026-04-02
+
+| Setting | Value | Method |
+|---------|-------|--------|
+| `group_analytic_accounting` | True | `res.config.settings.execute()` |
+| `account_storno` | True | `res.config.settings.execute()` |
+| Fiscal country | Indonesia (ID) | `company.account_fiscal_country_id` |
+| Fiscal year end | Dec 31 | Default (fiscalyear_last_day=31, fiscalyear_last_month=12) |
+| `fiscalyear_lock_date` | Unset | Finance sets manually at month-end |
+| `tax_lock_date` | Unset | Finance sets manually |
+| `hard_lock_date` | Unset | Finance sets manually |
+
+**Odoo 19 discovery:** `period_lock_date` field does not exist. Lock dates are:
+`fiscalyear_lock_date`, `tax_lock_date`, `sale_lock_date`, `purchase_lock_date`, `hard_lock_date`.
+All leave unset — Finance configures manually per the manual-first accounting rule.
+
+**Note:** `account_accountant` is Enterprise-only and not available in Community.
+Community full accounting is enabled via `res.config.settings` fields.
+
+---
+
 ## Current blockers
 - None
 
 ---
 
 ## Next safest step
-**Phase 4 is complete. Decide which slice to build next.**
+**Milestone 5 — Financial Hardening Pause: manual UI testing and security group verification.**
 
-Phase 4 exit criteria met:
-- One full simulated flock cycle passed all checks ✅
-- Manual month-end close documented and tested ✅
-- All known issues fixed and/or accepted as known limitations ✅
+The duck slice is now feature-complete for Phase 4. Recommended next steps:
+1. **Security group UI test** — verify access groups block/allow per ACL matrix (login as operator vs shed_manager)
+2. **Run simulate_layer_flock.py** with vaccine logs added (update script to include vaccine events)
+3. **Create duck CoA accounts** — 5 accounts in `l10n_id` chart for WIP/FG/Byproduct/AbnormalLoss
+4. **Decide Slice 2** — hydroponic crop, fish/aquaculture, or financial hardening with real data
 
-### Candidate next steps (in priority order):
-1. **UI smoke test** — test Phase 4 results manually in the Odoo web UI (verify menus, forms, report rendering)
-2. **Security group UI test** — verify access control groups block/allow correctly per ACL matrix
-3. **Decide Slice 2** — options: hydroponic crop operations, fish/aquaculture, or financial hardening with real data from actual duck cycle
+### Run the 60-day simulation:
+```bash
+docker exec -i gaialangit-odoo odoo shell -d gaialangit --no-http \
+  < scripts/simulate_layer_flock.py
+```
+
+### What the simulation does:
+- Finds/creates 8 products, Duck Farming division, Main Farm site, Duck House A zone
+- Buys 500 DOD via PO at Rp 15,000, receives with lot `DOD-LAYER-SIM-2026-001`
+- Creates a layer flock batch, places flock (input gate), transitions to laying
+- Simulates 60 days: feed (starter/grower/layer), 5 mortality events, eggs (days 25–60
+  ramping 100→350/day), manure every 7 days (~100 kg)
+- Leaves flock ACTIVE (not closed) for manual UI testing
+- Prints full summary: head count, feed by type, eggs, manure, cost approximations
+
+### After simulation — manual UI testing checklist:
+1. Open Farming → Duck Operations → Flock Batches → find the new batch
+2. Verify state = laying, current_count matches summary
+3. Verify feed logs, mortality events, egg collections, manure logs in tabs
+4. Check reconciliation (button on batch form)
+5. Print Batch Cost Summary PDF report
+6. Test manual egg collection (add one more) then confirm
+7. Verify security group access (login as operator vs shed_manager)
+
+### Previous next steps (still valid after Milestone 5):
+1. **Security group UI test** — verify access control groups block/allow correctly per ACL matrix
+2. **Decide Slice 2** — options: hydroponic crop operations, fish/aquaculture, or financial hardening with real data from actual duck cycle
 
 **Previously:**
 

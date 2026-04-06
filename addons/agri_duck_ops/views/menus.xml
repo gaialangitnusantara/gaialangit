@@ -45,6 +45,13 @@
               sequence="30"
               groups="agri_base_masterdata.group_shed_manager,agri_base_masterdata.group_farm_admin"/>
 
+    <menuitem id="menu_duck_vaccine"
+              name="Vaccine / Treatment"
+              parent="menu_duck_daily_ops"
+              action="action_agri_flock_vaccine_log"
+              sequence="35"
+              groups="agri_base_masterdata.group_farm_operator,agri_base_masterdata.group_shed_manager,agri_base_masterdata.group_farm_admin"/>
+
     <menuitem id="menu_duck_manure"
               name="Manure Capture"
               parent="menu_duck_daily_ops"

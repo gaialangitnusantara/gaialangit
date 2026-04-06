@@ -26,10 +26,10 @@ class FlockManureLog(models.Model):
     _rec_name = 'display_name'
 
     batch_id = fields.Many2one(
-        'agri.biological.batch',
+        'agri.flock.batch',
         string='Flock Batch',
         required=True,
-        ondelete='restrict',
+        ondelete='cascade',
         index=True,
     )
     date = fields.Date(
@@ -84,6 +84,7 @@ class FlockManureLog(models.Model):
         4. batch._update_gate_sync()
         """
         for rec in self:
+            rec.batch_id._check_gate_access()
             if rec.state != 'draft':
                 raise UserError('Manure log is already confirmed.')
 

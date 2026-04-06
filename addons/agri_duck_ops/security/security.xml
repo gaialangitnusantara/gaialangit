@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!--
+        Record rules for agri.flock.batch (Duck Flock Batch).
+        Moved from agri_biological_batches when base was refactored to AbstractModel.
+
+        Operator  → sees batches only in their assigned zones
+        Shed mgr  → sees batches only in their assigned site
+        Admin     → bypass rule → sees all
+        Finance   → no rule defined → unrestricted read (sees all divisions)
+    -->
+
+    <!-- Operator: zone-scoped. If zone_ids is empty the operator sees nothing. -->
+    <record id="rule_flock_batch_operator" model="ir.rule">
+        <field name="name">Flock Batch: operator sees assigned zones only</field>
+        <field name="model_id" ref="agri_duck_ops.model_agri_flock_batch"/>
+        <field name="domain_force">[('zone_id', 'in', user.zone_ids.ids)]</field>
+        <field name="groups" eval="[(4, ref('agri_base_masterdata.group_farm_operator'))]"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="True"/>
+        <field name="perm_create" eval="True"/>
+        <field name="perm_unlink" eval="True"/>
+    </record>
+
+    <!-- Shed manager: site-scoped. If site_id is unset the manager sees nothing. -->
+    <record id="rule_flock_batch_shed_manager" model="ir.rule">
+        <field name="name">Flock Batch: shed manager sees assigned site only</field>
+        <field name="model_id" ref="agri_duck_ops.model_agri_flock_batch"/>
+        <field name="domain_force">[('site_id', '=', user.site_id.id)]</field>
+        <field name="groups" eval="[(4, ref('agri_base_masterdata.group_shed_manager'))]"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="True"/>
+        <field name="perm_create" eval="True"/>
+        <field name="perm_unlink" eval="True"/>
+    </record>
+
+    <!-- Admin: bypass — sees all batches regardless of site/zone assignment. -->
+    <record id="rule_flock_batch_admin" model="ir.rule">
+        <field name="name">Flock Batch: admin sees all</field>
+        <field name="model_id" ref="agri_duck_ops.model_agri_flock_batch"/>
+        <field name="domain_force">[(1, '=', 1)]</field>
+        <field name="groups" eval="[(4, ref('agri_base_masterdata.group_farm_admin'))]"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="True"/>
+        <field name="perm_create" eval="True"/>
+        <field name="perm_unlink" eval="True"/>
+    </record>
+
+</odoo>

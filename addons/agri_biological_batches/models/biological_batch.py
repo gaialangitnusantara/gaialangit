@@ -3,10 +3,9 @@ from odoo import models, fields, api
 from odoo.exceptions import UserError
 
 
-class BiologicalBatch(models.Model):
+class BiologicalBatch(models.AbstractModel):
     _name = 'agri.biological.batch'
     _description = 'Biological Batch'
-    _order = 'start_date desc, name'
     _inherit = ['mail.thread', 'mail.activity.mixin']
 
     name = fields.Char(

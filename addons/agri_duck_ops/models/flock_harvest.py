@@ -28,10 +28,10 @@ class FlockHarvest(models.Model):
     _rec_name = 'display_name'
 
     batch_id = fields.Many2one(
-        'agri.biological.batch',
+        'agri.flock.batch',
         string='Flock Batch',
         required=True,
-        ondelete='restrict',
+        ondelete='cascade',
         index=True,
     )
     date = fields.Date(
@@ -96,9 +96,12 @@ class FlockHarvest(models.Model):
           Move 2 (produce): production location → finished goods
                             product: meat_product, qty: meat_weight_kg, lot: new
 
-        If either _action_done() fails → entire method rolls back.
+        Both moves are fully created and prepared BEFORE either _action_done()
+        is called, ensuring true atomicity. If either _action_done() fails,
+        the entire transaction rolls back.
         """
         for rec in self:
+            rec.batch_id._check_gate_access()
             if rec.state != 'draft':
                 raise UserError('Harvest record is already confirmed.')
 
@@ -133,7 +136,7 @@ class FlockHarvest(models.Model):
             prod_loc = batch._get_production_location()
             fg_loc = batch._get_finished_goods_location()
 
-            # Move 1: consume live birds (flock location → production)
+            # ── Create Move 1: consume live birds (flock location → production) ──
             move_consume_vals = {
                 'product_id': batch.live_bird_product_id.id,
                 'product_uom_qty': rec.harvest_count,
@@ -148,17 +151,15 @@ class FlockHarvest(models.Model):
                     'location_id': batch.flock_location_id.id,
                     'location_dest_id': prod_loc.id,
                     'lot_id': batch.lot_id.id,
-                    'picked': True,  # Odoo 19: required for _action_done() to process this line
+                    'picked': True,  # Odoo 19: required for _action_done()
                 })],
             }
             move_consume = rec.env['stock.move'].create(move_consume_vals)
             move_consume._action_confirm()
             move_consume._action_assign()
-            # Odoo 19: must set picked=True after assign (computed field resets it otherwise)
-            move_consume.move_line_ids.picked = True
-            move_consume._action_done()  # Must succeed before proceeding
+            move_consume.move_line_ids.picked = True  # Odoo 19: reset after assign
 
-            # Generate meat lot
+            # ── Generate meat lot ──────────────────────────────────────────────
             lot_name = (
                 f'{batch.name}-MEAT-{rec.date.strftime("%Y%m%d")}'
                 if rec.date else f'{batch.name}-MEAT'
@@ -169,7 +170,7 @@ class FlockHarvest(models.Model):
                 'company_id': rec.env.company.id,
             })
 
-            # Move 2: produce meat (production → finished goods)
+            # ── Create Move 2: produce meat (production → finished goods) ──────
             move_meat_vals = {
                 'product_id': batch.meat_product_id.id,
                 'product_uom_qty': rec.meat_weight_kg,
@@ -184,15 +185,18 @@ class FlockHarvest(models.Model):
                     'location_id': prod_loc.id,
                     'location_dest_id': fg_loc.id,
                     'lot_id': lot.id,
-                    'picked': True,  # Odoo 19: required for _action_done() to process this line
+                    'picked': True,  # Odoo 19: required for _action_done()
                 })],
             }
             move_meat = rec.env['stock.move'].create(move_meat_vals)
             move_meat._action_confirm()
             move_meat._action_assign()
-            # Odoo 19: must set picked=True after assign (computed field resets it otherwise)
-            move_meat.move_line_ids.picked = True
-            move_meat._action_done()  # If this fails → everything rolls back
+            move_meat.move_line_ids.picked = True  # Odoo 19: reset after assign
+
+            # ── Execute both moves — true atomicity: both or neither ───────────
+            # If _action_done() fails on either, the entire transaction rolls back.
+            move_consume._action_done()
+            move_meat._action_done()
 
             rec.write({
                 'state': 'confirmed',

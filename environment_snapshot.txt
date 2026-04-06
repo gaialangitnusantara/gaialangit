@@ -1,0 +1,28 @@
+Gaialangit ERP — Environment Snapshot
+Captured: 2026-04-06
+================================================================================
+
+Odoo version
+------------
+19.0-20260324
+(container: gaialangit-odoo)
+
+PostgreSQL version
+------------------
+psql (PostgreSQL) 16.13
+(container: gaialangit-db)
+
+Docker version
+--------------
+Docker version 29.2.1, build a5c7197
+
+Docker Compose version
+----------------------
+Docker Compose version v5.1.0
+
+================================================================================
+Notes
+- Odoo image pinned in .env: odoo:19.0 (digest sha256:19b1d3cc...)
+- DB name: gaialangit | DB user: odoo | Host port: 5432
+- Odoo host port: 8069
+- Custom addons installed: agri_base_masterdata, agri_biological_batches, agri_duck_ops

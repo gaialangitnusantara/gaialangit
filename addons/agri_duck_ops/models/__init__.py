@@ -4,3 +4,4 @@ from . import flock_mortality
 from . import flock_egg_collection
 from . import flock_harvest
 from . import flock_manure_log
+from . import flock_vaccine_log
